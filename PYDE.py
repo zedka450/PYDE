@@ -151,7 +151,7 @@ def main():
 
 def write():
     lines = []
-    print("(ligne vide pour terminer)")
+    print("(blank line to finish)")
     while True:
         line = input("line: ")
         if line == "":
