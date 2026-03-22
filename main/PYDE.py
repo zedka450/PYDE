@@ -40,6 +40,40 @@ def json_write(data, jsontype):
 
 # ─── Textual editor ──────────────────────────────────────────────────────────
 
+class AutoTextArea(TextArea):
+    PAIRS = {
+        "(": ")",
+        "[": "]",
+        "{": "}",
+        '"': '"',
+        "'": "'",
+    }
+
+    def on_key(self, event) -> None:
+        if event.character in self.PAIRS:
+            closing = self.PAIRS[event.character]
+            self.insert(event.character + closing)
+            row, col = self.cursor_location
+            self.cursor_location = (row, col - 1)
+            event.prevent_default()
+        elif event.key == "enter":
+            editor_text = self.text
+            row, col = self.cursor_location
+            lines = editor_text.split("\n")
+            current_line = lines[row]
+            indent = len(current_line) - len(current_line.lstrip())
+
+            INDENT_TRIGGERS = ("if ", "elif ", "else:", "for ", "while ", "try:", "except", "finally:", "with ", "def ",
+                               "class ", "match ", "case ")
+
+            stripped = current_line.strip()
+            if any(stripped.startswith(trigger) for trigger in INDENT_TRIGGERS) and stripped.endswith(":"):
+                indent += 4
+
+            self.insert("\n" + " " * indent)
+            event.prevent_default()
+
+
 class Editor(App):
     BINDINGS = [
         Binding("ctrl+s", "save", "Save"),
@@ -58,11 +92,11 @@ class Editor(App):
         yield Header(show_clock=True)
         yield Label(f" {self.filepath}  |  Ctrl+S save  •  Ctrl+Q quit")
         if self.language:
-            ta = TextArea.code_editor(self.content, language=self.language, id="editor")
+            ta = AutoTextArea.code_editor(self.content, language=self.language, id="editor")
             ta.theme = self.editor_theme
             yield ta
         else:
-            yield TextArea(self.content, id="editor")
+            yield AutoTextArea(self.content, id="editor")
         yield Footer()
 
     def action_save(self):
@@ -74,6 +108,7 @@ class Editor(App):
 
     def action_quit(self):
         self.exit()
+
 
 def open_editor(filepath: str):
     ext = os.path.splitext(filepath)[1].lower()
