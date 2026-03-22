@@ -4,6 +4,7 @@ import subprocess
 from textual.app import App, ComposeResult
 from textual.widgets import TextArea, Header, Footer, Label
 from textual.binding import Binding
+import jedi
 
 PROJECTS_FILE = "projects.json"
 SETTINGS_FILE = "settings.json"
@@ -108,8 +109,9 @@ def main():
     print(" 4. Run project")
     print(" 5. List projects")
     print(" 6. Settings")
-    print(" 7. Exit")
-    ans = input("1-7 ? ")
+    print(" 7. Add package")
+    print(" 8. Exit")
+    ans = input("1-8 ? ")
 
     if ans == "1":
         create_project()
@@ -124,6 +126,8 @@ def main():
     elif ans == "6":
         settings()
     elif ans == "7":
+        install_package()
+    elif ans == "8":
         sys.exit(0)
     else:
         print("Invalid input!")
@@ -148,6 +152,16 @@ def create_project():
     data[name] = {"path": path, "files": []}
     json_write(data, "projects")
     print(f"Project '{name}' created!")
+
+    venv_path = os.path.join(path, ".venv")
+    print("Creating virtual environment...")
+    subprocess.run([sys.executable, "-m", "venv", venv_path])
+    print("Virtual environment created!")
+
+    venv_pip = os.path.join(path, ".venv", "Scripts", "pip")
+    print("Updating pip...")
+    subprocess.run([venv_pip, "install", "--upgrade", "pip"])
+    print("pip updated!")
 
     if input("Add a file now? (y/n) ").lower() == "y":
         _add_file_to(name, data)
@@ -233,7 +247,13 @@ def run_project():
 
     filepath = os.path.join(data[name]["path"], filename)
     print(f"\n--- Running {filename} ---\n")
-    result = subprocess.run([sys.executable, filepath])
+    venv_python = os.path.join(data[name]["path"], ".venv", "Scripts", "python.exe")
+    if os.path.exists(venv_python):
+        python = venv_python
+    else:
+        python = sys.executable
+
+    result = subprocess.run([python, filepath])
     print(f"--- {'OK' if result.returncode == 0 else f'FAILED (exit {result.returncode})'} ---")
     pause(); main()
 
@@ -266,6 +286,28 @@ def settings():
         else:
             print("Invalid choice.")
     pause(); main()
+
+
+def install_package():
+    data = json_read("projects")
+    name = input("Project name: ")
+    if name not in data:
+        print(f"ERROR: project '{name}' not found.")
+        pause();
+        main()
+
+    package = input("Package name: ")
+    venv_pip = os.path.join(data[name]["path"], ".venv", "Scripts", "pip")
+
+    print(f"Installing {package}...")
+    result = subprocess.run([venv_pip, "install", package])
+
+    if result.returncode == 0:
+        print(f"'{package}' installed successfully!")
+    else:
+        print(f"ERROR: failed to install '{package}'.")
+    pause();
+    main()
 
 if __name__ == "__main__":
     main()
