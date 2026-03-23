@@ -62,17 +62,31 @@ class AutoTextArea(TextArea):
             lines = editor_text.split("\n")
             current_line = lines[row]
             indent = len(current_line) - len(current_line.lstrip())
-
-            INDENT_TRIGGERS = ("if ", "elif ", "else:", "for ", "while ", "try:", "except", "finally:", "with ", "def ",
-                               "class ", "match ", "case ")
-
+            INDENT_TRIGGERS = ("if ", "elif ", "else:", "for ", "while ", "try:", "except", "finally:", "with ", "def ", "class ", "match ", "case ")
             stripped = current_line.strip()
             if any(stripped.startswith(trigger) for trigger in INDENT_TRIGGERS) and stripped.endswith(":"):
                 indent += 4
-
             self.insert("\n" + " " * indent)
             event.prevent_default()
+        elif event.character and event.character.isalpha():
+            self.set_timer(0.3, self._show_completions)
+            row, col = self.cursor_location
+            completions = self.get_completions(row + 1, col)
+                        if completions:
+                self.app.notify(", ".join(completions[:5]))
 
+    def get_completions(self, row, col):
+        try:
+            script = jedi.Script(self.text)
+            return [c.name for c in script.complete(row, col)]
+        except:
+            return []
+
+    def _show_completions(self):
+        row, col = self.cursor_location
+        completions = self.get_completions(row + 1, col + 1)
+        if completions:
+            self.app.notify(", ".join(completions[:5]), timeout=2)
 
 class Editor(App):
     BINDINGS = [
@@ -108,7 +122,6 @@ class Editor(App):
 
     def action_quit(self):
         self.exit()
-
 
 def open_editor(filepath: str):
     ext = os.path.splitext(filepath)[1].lower()
