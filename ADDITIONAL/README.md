@@ -19,6 +19,8 @@ A Python-terminal IDE built with Textual. Edit, run, and manage Python (and more
 
 ## Installation
 
+### Method 1. - Source code
+
 Requires **Python 3.10+**
 
 ```
@@ -29,6 +31,10 @@ python PYDE.py
 ```
 
 ---
+
+### Method 2. - Relasease (.exe)
+
+Go to [this link](https://github.com/zedka450/PYDE/releases/tag/v1.0) and download the "`PYDE.exe`"
 
 ## Usage
 
