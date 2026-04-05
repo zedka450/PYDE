@@ -72,7 +72,7 @@ class AutoTextArea(TextArea):
             self.set_timer(0.3, self._show_completions)
             row, col = self.cursor_location
             completions = self.get_completions(row + 1, col)
-                        if completions:
+            if completions:
                 self.app.notify(", ".join(completions[:5]))
 
     def get_completions(self, row, col):
